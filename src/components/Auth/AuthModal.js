@@ -89,15 +89,6 @@ export default function AuthModal({ isOpen, onClose }) {
 
       {/* 2. The Modal Card */}
       <div className="relative max-w-md w-full bg-zinc-900 border border-purple-500/30 p-8 rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200">
-
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-zinc-500 hover:text-white"
-        >
-          ✕
-        </button>
-
         <h1 className="text-2xl font-bold text-white mb-6 text-center">
           {isLogin ? 'Welcome Back' : 'Create Account'}
         </h1>
