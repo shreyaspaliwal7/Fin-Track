@@ -21,24 +21,22 @@ export async function middleware(request) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 1. If user is NOT logged in and trying to access "/", send to login
-//   if (!user && request.nextUrl.pathname === '/') {
-//     return NextResponse.redirect(new URL('/', request.url))
-//   }
+  // 1. If user is NOT logged in and trying to access anything other than "/", send to login
+  if (!user && request.nextUrl.pathname !== '/') {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
 
   // 2. If user IS logged in, check onboarding status
   if (user) {
-    const isOnboardingComplete = user.user_metadata?.onboarding_complete
+    const isOnboardingComplete = user.user_metadata?.onboarding_complete === true
 
     // If onboarding not done and they aren't already on the onboarding page
     if (!isOnboardingComplete && !request.nextUrl.pathname.startsWith('/onboarding')) {
       return NextResponse.redirect(new URL('/onboarding', request.url))
     }
     
-    // If onboarding IS done and they try to go back to onboarding, send to dashboard
-    if (isOnboardingComplete && request.nextUrl.pathname.startsWith('/onboarding')) {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
+    // Allow users to re-access onboarding to edit their setup if they route there manually.
+    // We only force them if they haven't completed it.
   }
 
   return response

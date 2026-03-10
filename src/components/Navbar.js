@@ -20,11 +20,11 @@ export default function Navbar() {
         
         {/* Left Side: Logo */}
         <div className="flex items-center gap-2">
-          <img src="/Gemini_Generated_Image_lxbsxvlxbsxvlxbs-removebg-preview.png" alt="Finance Tracker Logo" className="w-48" />
+          <img src="/Gemini_Generated_Image_lxbsxvlxbsxvlxbs-removebg-preview.png" alt="Finance Tracker Logo" className="w-32 md:w-48" />
         </div>
 
         {/* Right Side: Profile Info */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           {user ? (
             <div className="flex items-center gap-3">
               <span className="text-zinc-400 text-sm hidden md:block">

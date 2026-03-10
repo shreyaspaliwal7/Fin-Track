@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { client, client as supabase } from '@/api/client'
+import { useRouter } from 'next/navigation'
 
 export default function AuthModal({ isOpen, onClose }) {
   const [isLogin, setIsLogin] = useState(true)
@@ -9,6 +10,7 @@ export default function AuthModal({ isOpen, onClose }) {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const router = useRouter()
 
   if (!isOpen) return null; // Don't render if not open
 
@@ -26,13 +28,19 @@ export default function AuthModal({ isOpen, onClose }) {
         });
 
         if (error) {
-          alert("Enter valid credentials");
           throw error
         };
 
-        // If login is successful, we close the modal immediately
+        // If login is successful, we DO NOT close the modal immediately and instead let page.js handle it once the React context updates `user`.
+        // This avoids triggering the `handleClose` alert in page.js synchronously while `user` is still null.
+        
+        // Let middleware accurately determine where to send the user based on complete state and cookies
+        // Also explicitly force a route push if they haven't completed onboarding yet to avoid race conditions.
+        if (data?.user?.user_metadata?.onboarding_complete !== true) {
+          router.push('/onboarding');
+        }
 
-        onClose();
+        router.refresh();
       } else {
         // --- SIGN UP LOGIC ---
         const { data, error } = await supabase.auth.signUp({
@@ -54,14 +62,18 @@ export default function AuthModal({ isOpen, onClose }) {
         // If the user isn't logged in immediately (session is null), 
         // we show a message instead of just closing the modal.
         if (data?.session) {
-
-          onClose();
+          router.push('/onboarding'); // Explicitly push new signups to onboarding
+          router.refresh(); 
         } else {
           alert("Sign-up successful! Please check your email to confirm your account.");
         }
       }
     } catch (err) {
-      setError(err.message);
+      if (err.status === 429 || err.message?.includes('rate limit') || err.message?.includes('429')) {
+        setError("Too many signup attempts (Rate limited). Please wait a while before trying again.");
+      } else {
+        setError(err.message || "An error occurred during authentication.");
+      }
     } finally {
       setLoading(false);
     }
@@ -70,10 +82,10 @@ export default function AuthModal({ isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* 1. The Blurry Backdrop */}
-      <div
+      {/* <div
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={onClose}
-      />
+      /> */}
 
       {/* 2. The Modal Card */}
       <div className="relative max-w-md w-full bg-zinc-900 border border-purple-500/30 p-8 rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200">
@@ -89,6 +101,12 @@ export default function AuthModal({ isOpen, onClose }) {
         <h1 className="text-2xl font-bold text-white mb-6 text-center">
           {isLogin ? 'Welcome Back' : 'Create Account'}
         </h1>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm text-center">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleAuth} className="space-y-4">
           {!isLogin && (
